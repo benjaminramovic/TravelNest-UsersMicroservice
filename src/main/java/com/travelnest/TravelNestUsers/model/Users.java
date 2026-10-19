@@ -13,11 +13,18 @@ public class Users {
     private int id;
     private String firstName;
     private String lastName;
+    @Column(unique = true, nullable = false)
     private String email;
     private String phone;
+    @Column(unique = true, nullable = false)
     private String username;
     private String password;
     private boolean isEnabled;
+    private String verificationToken;
+    private boolean isVerified;
+
+    @Column(name = "reset_token")
+    private String resetToken;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -112,5 +119,29 @@ public class Users {
 
     public void setRoles(Set<UserRole> roles) {
         this.roles = roles;
+    }
+
+    public String getVerificationToken() {
+        return verificationToken;
+    }
+
+    public void setVerificationToken(String verificationToken) {
+        this.verificationToken = verificationToken;
+    }
+
+    public boolean isVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(boolean verified) {
+        isVerified = verified;
+    }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
     }
 }

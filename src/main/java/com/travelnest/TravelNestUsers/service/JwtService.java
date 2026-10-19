@@ -1,9 +1,12 @@
 package com.travelnest.TravelNestUsers.service;
 
+import com.travelnest.TravelNestUsers.model.UserRole;
+import com.travelnest.TravelNestUsers.model.Users;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -19,28 +22,41 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    private String secretKey = "";
+    @Value("${jwt.secret}")
+    private String secretKey;
 
-    public JwtService() {
-        try {
-            KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
-            SecretKey sk = keyGenerator.generateKey();
-            secretKey = Base64.getEncoder().encodeToString(sk.getEncoded());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    @Value("${jwt.expiration}")
+    private Long jwtExpiration;
 
-    public String generateKey(String username) {
+
+    public String generateKey(Users user) {
         Map<String,Object> claims = new HashMap<>();
+        claims.put(
+                "roles",
+                user.getRoles()
+                        .stream()
+                        .map(UserRole::getName)
+                        .toList()
+        );
 
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(username)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60*10000))
+                .subject(user.getUsername())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .and()
+                .signWith(getKey())
+                .compact();
+    }
+    public String generateVerificationToken(Users user) {
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .claim("type", "EMAIL_VERIFICATION")
+                .issuedAt(new Date())
+                .expiration(new Date(
+                        System.currentTimeMillis() + 15 * 60 * 1000
+                ))
                 .signWith(getKey())
                 .compact();
     }
@@ -66,6 +82,9 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
 
     }
+    public String extractEmail(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
 
     public boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
@@ -73,7 +92,13 @@ public class JwtService {
 
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isVerificationToken(String token) {
+        Claims claims = extractAllClaims(token);
+        return "EMAIL_VERIFICATION".equals(
+                claims.get("type", String.class)
+        );
+    }
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 

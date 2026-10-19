@@ -2,9 +2,12 @@ package com.travelnest.TravelNestUsers.controller;
 
 import com.travelnest.TravelNestUsers.dto.LoginRequest;
 import com.travelnest.TravelNestUsers.dto.LoginResponse;
+import com.travelnest.TravelNestUsers.dto.RefreshTokenRequest;
 import com.travelnest.TravelNestUsers.dto.RegisterUser;
 import com.travelnest.TravelNestUsers.mapper.UserMapper;
+import com.travelnest.TravelNestUsers.model.RefreshToken;
 import com.travelnest.TravelNestUsers.model.Users;
+import com.travelnest.TravelNestUsers.service.RefrehTokenService;
 import com.travelnest.TravelNestUsers.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +20,9 @@ public class UserController {
     @Autowired
     UserService service;
 
+    @Autowired
+    RefrehTokenService refrehTokenService;
+
 
     @GetMapping("/")
     public List<Users> getAll(){
@@ -26,11 +32,20 @@ public class UserController {
 
     @PostMapping("/register")
     public Users register(@RequestBody RegisterUser user){
+        System.out.println("REGISTER CONTROLLER POZVAN");
+
         return service.register(UserMapper.mapToUser(user));
     }
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest user){
         return service.verify(user);
+    }
+
+    @PostMapping("/refresh")
+    public LoginResponse refreshToken(
+            @RequestBody RefreshTokenRequest request
+    ) {
+        return service.refresh(request);
     }
 
 //    @PostMapping("/refresh")
